@@ -15,6 +15,8 @@
  */
 package ch.syabru.nagios;
 
+import sun.management.ConnectorAddressLink;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -395,10 +397,19 @@ public class NagiosJmxPlugin {
 
         JMXServiceURL url = null;
         try {
-            url = new JMXServiceURL(serviceUrl);
+            int pid = Integer.parseInt(serviceUrl);
+            serviceUrl = ConnectorAddressLink.importFrom(pid);
+           url = new JMXServiceURL(serviceUrl);
+        } catch (NumberFormatException ex) {
+            try {
+                url = new JMXServiceURL(serviceUrl);
+            } catch (MalformedURLException e) {
+                throw new NagiosJmxPluginException("Malformed service URL [" + serviceUrl + "]", e);
+            }
         } catch (MalformedURLException e) {
-            throw new NagiosJmxPluginException("Malformed service URL [" +
-                    serviceUrl + "]", e);
+            throw new NagiosJmxPluginException("Malformed service URL [" + serviceUrl + "]", e);
+        } catch (IOException e) {
+            throw new NagiosJmxPluginException("Can't connect to JMX", e);
         }
         // Connect to MBean server.
         MBeanServerConnection connection = null;
